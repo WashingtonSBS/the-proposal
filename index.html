@@ -121,6 +121,81 @@
     font-size:16px; color:#DCE6F0; font-weight:600; letter-spacing:.02em; padding:0 20px;
   }
   #finaleUnderline.show{opacity:1;}
+
+  /* ---- retro 8-bit start screen ---- */
+  #startScreen{
+    background:radial-gradient(ellipse at 50% 35%, #234158 0%, #0F1B2C 78%);
+  }
+  #startScreen::after{
+    content:""; position:absolute; inset:0; pointer-events:none; z-index:1;
+    background:repeating-linear-gradient(0deg, rgba(0,0,0,.18) 0px, rgba(0,0,0,.18) 1px, transparent 1px, transparent 3px);
+  }
+  .pixel-frame{
+    position:relative; z-index:2;
+    background:#152838;
+    border:4px solid var(--gold);
+    box-shadow:6px 6px 0 rgba(0,0,0,.55);
+    padding:30px 24px 26px;
+    clip-path:polygon(0 10px,10px 10px,10px 0,calc(100% - 10px) 0,calc(100% - 10px) 10px,100% 10px,100% calc(100% - 10px),calc(100% - 10px) calc(100% - 10px),calc(100% - 10px) 100%,10px 100%,10px calc(100% - 10px),0 calc(100% - 10px));
+    max-width:300px;
+    display:flex; flex-direction:column; align-items:center;
+  }
+  .pixel-heart-wrap{ position:relative; width:28px; height:24px; margin-bottom:16px; }
+  .pixel-heart{
+    width:4px; height:4px; position:absolute; top:0; left:0; background:transparent;
+    box-shadow:
+    4px 0px 0 var(--gold),
+    12px 0px 0 var(--gold),
+    20px 0px 0 var(--gold),
+    0px 4px 0 var(--gold),
+    4px 4px 0 var(--gold),
+    8px 4px 0 var(--gold),
+    12px 4px 0 var(--gold),
+    16px 4px 0 var(--gold),
+    20px 4px 0 var(--gold),
+    24px 4px 0 var(--gold),
+    0px 8px 0 var(--gold),
+    4px 8px 0 var(--gold),
+    8px 8px 0 var(--gold),
+    12px 8px 0 var(--gold),
+    16px 8px 0 var(--gold),
+    20px 8px 0 var(--gold),
+    24px 8px 0 var(--gold),
+    4px 12px 0 var(--gold),
+    8px 12px 0 var(--gold),
+    12px 12px 0 var(--gold),
+    16px 12px 0 var(--gold),
+    20px 12px 0 var(--gold),
+    8px 16px 0 var(--gold),
+    12px 16px 0 var(--gold),
+    16px 16px 0 var(--gold),
+    12px 20px 0 var(--gold);
+  }
+  .retro-eyebrow{
+    font-family:'Courier New', ui-monospace, monospace; color:#8FB0CC;
+    font-size:10px; letter-spacing:.3em; text-transform:uppercase; margin-bottom:14px;
+  }
+  .retro-title{
+    font-family:'Courier New', ui-monospace, monospace;
+    font-weight:900; text-transform:uppercase; letter-spacing:2px;
+    color:#F3D9A4; text-align:center;
+    text-shadow:3px 0 0 #3E5876, 0 3px 0 #3E5876, 3px 3px 0 #3E5876, -3px 0 0 #3E5876, 0 -3px 0 #3E5876, -3px -3px 0 #3E5876, -3px 3px 0 #3E5876, 3px -3px 0 #3E5876;
+    font-size:clamp(22px,7vw,30px); line-height:1.35; margin:0 0 14px;
+  }
+  .retro-sub{
+    font-family:'Courier New', ui-monospace, monospace; color:#AFC4DA;
+    font-size:12px; line-height:1.8; letter-spacing:.3px; max-width:250px; margin:0 0 24px;
+  }
+  .btn-retro{
+    appearance:none; cursor:pointer; font-family:'Courier New', ui-monospace, monospace;
+    font-weight:900; text-transform:uppercase; letter-spacing:2px; font-size:15px;
+    background:var(--gold); color:#1C2B45; border:3px solid #1C2B45;
+    padding:13px 26px; box-shadow:5px 5px 0 #0A1420;
+    animation:retro-blink 1.3s steps(1,end) infinite;
+    transition:none;
+  }
+  .btn-retro:active{ transform:translate(5px,5px); box-shadow:0 0 0 #0A1420; }
+  @keyframes retro-blink{ 0%,55%{opacity:1;} 56%,100%{opacity:.78;} }
 </style>
 </head>
 <body>
@@ -133,10 +208,13 @@
   <button id="jumpBtn" class="hidden">PULAR</button>
 
   <div id="startScreen" class="screen">
-    <div class="eyebrow">um joguinho</div>
-    <h1>Nossa<br/>História</h1>
-    <p class="sub">Toca em <b>pular</b> pra recolher uns lanchinhos e desviar dos obstáculos pelo caminho. Você tem 3 vidas. No final tem uma surpresa. 💙</p>
-    <button class="btn" id="startBtn">Começar</button>
+    <div class="pixel-frame">
+      <div class="pixel-heart-wrap"><div class="pixel-heart"></div></div>
+      <div class="retro-eyebrow">um joguinho</div>
+      <div class="retro-title">The<br/>Proposal</div>
+      <p class="retro-sub">Toque em PULAR pra recolher uns lanchinhos e desviar dos obstáculos. Você tem 3 vidas. No final tem uma surpresa.</p>
+      <button class="btn-retro" id="startBtn">▶ Começar</button>
+    </div>
   </div>
 
   <div id="card" class="hidden">
