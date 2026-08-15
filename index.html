@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>The Proposal</title>
-<!-- Approved baseline v6: fully opaque protagonist + non-transparent damage feedback -->
+<!-- Approved baseline v7: rebuilt technical Nerd sprite sheet v2 with corrected animation frames -->
 <style>
   :root{
     --bg:#0B1017;
@@ -381,10 +381,10 @@
   }
   .start-character.real-sprite{
     width:128px;height:128px;margin:-3px auto 8px;
-    background-image:url("assets/nerd-sprites.png");
+    background-image:url("assets/nerd-sprites-v2.png");
     background-repeat:no-repeat;
     background-position:0 0;
-    background-size:1024px 384px;
+    background-size:1280px 960px;
     image-rendering:pixelated;
     transform:scale(1.05);
     transform-origin:center;
@@ -449,15 +449,15 @@
 
   // Real sprite sheet based on the approved Nerd Apaixonado concept.
   const nerdSprite = new Image();
-  nerdSprite.src = 'assets/nerd-sprites.png';
-  const SPRITE_CELL = 128;
+  nerdSprite.src = 'assets/nerd-sprites-v2.png';
+  const SPRITE_CELL = 160;
   const SPRITES = {
-    idle: [0,1,2,3],
-    run:  [4,5,6,7,8,9,10,11],
-    jump: [12,13,14],
-    fall: [15,16],
-    land: [17,18,19],
-    hit:  [20,21,22]
+    idle: [0,1,2,3,4,5],
+    run:  [8,9,10,11,12,13,14,15],
+    jump: [16,17,18,19,20,21],
+    fall: [24,25,26,27],
+    land: [32,33,34,35],
+    hit:  [40,41,42,43,44,45]
   };
 
   // Approved real pixel-art asset pack.
@@ -1142,8 +1142,8 @@
     const sy=Math.floor(frame/8)*SPRITE_CELL;
 
     // Larger and more character-like than the old procedural block figure.
-    const drawW=112;
-    const drawH=112;
+    const drawW=118;
+    const drawH=118;
     const dx=Math.round(px0-drawW/2);
     const dy=Math.round(py0-drawH+28);
 
