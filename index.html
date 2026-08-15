@@ -594,10 +594,11 @@
   }
 
   const lines = [
-    'aceita um cineminha,',
-    'uma pizza, um sorvete',
-    'e um açaí... para sempre,',
-    'casar comigo? 🙏💙'
+    'Um cineminha, uma pizza,',
+    'um sorvete, um açaí...',
+    'e você, para sempre',
+    'ao meu lado.',
+    'Aceita casar comigo? 🙏💙'
   ];
   let particles=[], finaleStart=0, finaleStars=[], crispStart=null;
   let textFontSize=20, textStartY=0, textLineH=0;
@@ -609,9 +610,9 @@
     const octx=off.getContext('2d');
     octx.scale(SCALE,SCALE);
     octx.fillStyle='#fff'; octx.textAlign='center'; octx.textBaseline='middle';
-    textFontSize=Math.max(17,Math.min(23,W/17));
+    textFontSize=Math.max(15,Math.min(21,W/18));
     octx.font=`800 ${textFontSize}px -apple-system, "Segoe UI", sans-serif`;
-    textStartY=H*0.34; textLineH=textFontSize*1.6;
+    textStartY=H*0.28; textLineH=textFontSize*1.55;
     lines.forEach((ln,i)=>octx.fillText(ln,W/2,textStartY+i*textLineH));
     const img=octx.getImageData(0,0,W*SCALE,H*SCALE).data;
     const pts=[]; const step=2; const fullW=W*SCALE;
