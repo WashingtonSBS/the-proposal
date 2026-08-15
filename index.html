@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>The Proposal</title>
-<!-- Visual baseline v2: approved Nerd Apaixonado art direction, park city scene and glowing pixel collectibles -->
+<!-- Approved baseline: Nerd real sprites + real collectible/obstacle pixel-art assets -->
 <style>
   :root{
     --bg:#0B1017;
@@ -460,6 +460,47 @@
     hit:  [20,21,22]
   };
 
+  // Approved real pixel-art asset pack.
+  const ASSET_FILES = {
+    heart:'heart.png',
+    basketball:'basketball.png',
+    gamepad:'gamepad.png',
+    clapper:'clapper.png',
+    pizza:'pizza.png',
+    burger:'burger.png',
+    fries:'fries.png',
+    icecream:'icecream.png',
+    acai:'acai.png',
+    coffee:'coffee.png',
+    trash:'trash.png',
+    barrier:'barrier.png',
+    cone:'cone.png',
+    laptop:'laptop.png',
+    crate:'crate.png'
+  };
+
+  const gameAssets = {};
+  Object.entries(ASSET_FILES).forEach(([key,file])=>{
+    const img=new Image();
+    img.src=`assets/${file}`;
+    gameAssets[key]=img;
+  });
+
+  const collectibleAsset = {
+    '🍨':'icecream',
+    '🫐':'acai',
+    '🍔':'burger',
+    '🍟':'fries',
+    '🍕':'pizza',
+    '🎬':'clapper',
+    '🎮':'gamepad',
+    '☕':'coffee',
+    '🏀':'basketball'
+  };
+
+  const obstacleTypes=['trash','barrier','cone','laptop','crate'];
+
+
   const hud = document.getElementById('hud');
   const coinCountEl = document.getElementById('coinCount');
   const heartsEl = document.getElementById('hearts');
@@ -509,7 +550,7 @@
   ];
 
   const TOTAL_DIST=9800;
-  const momentos=['🍨','🫐','🍔','🍟','🍕','🎬','🍿','🎥','🏀'];
+  const momentos=['🍨','🫐','🍔','🍟','🍕','🎬','🎮','☕','🏀'];
 
   let state='idle';
   let scrollDist=0,lastTime=0;
@@ -619,7 +660,7 @@
     if(Math.abs(x-lastCollectibleX)<OBSTACLE_COLLECTIBLE_GAP){
       nextObstacleAt=scrollDist+180; return;
     }
-    obstacles.push({worldX:x,hit:false});
+    obstacles.push({worldX:x,hit:false,type:obstacleTypes[Math.floor(Math.random()*obstacleTypes.length)]});
     lastObstacleX=x;
     nextObstacleAt=scrollDist+W*1.05+Math.random()*280;
   }
@@ -892,19 +933,32 @@
     ctx.restore();
   }
 
-  function drawObstacle(x,gy){
+  function drawObstacle(obstacle,x,gy){
+    const type=obstacle.type || 'trash';
+    const img=gameAssets[type];
+    if(!img || !img.complete || !img.naturalWidth) return;
+
+    const sizes={
+      trash:[54,54],
+      barrier:[70,54],
+      cone:[52,58],
+      laptop:[62,52],
+      crate:[58,58]
+    };
+    const [w,h]=sizes[type] || [56,56];
+
     ctx.save();
-    ctx.translate(Math.round(x),Math.round(gy));
-    const glow=ctx.createRadialGradient(0,-26,3,0,-26,44);
-    glow.addColorStop(0,'rgba(142,115,177,.22)');
-    glow.addColorStop(1,'rgba(142,115,177,0)');
-    ctx.fillStyle=glow;ctx.fillRect(-50,-75,100,90);
-    px(-19,-39,38,39,'#39314B');
-    px(-15,-44,30,7,'#655C78');
-    px(-12,-48,23,5,'#897E98');
-    px(-14,-32,7,7,'#201C2B');
-    px(5,-23,8,6,'#201C2B');
-    px(-13,-41,15,3,'#B4A9C0');
+    ctx.imageSmoothingEnabled=false;
+
+    // subtle contact shadow only; artwork itself already contains its authored shading.
+    ctx.globalAlpha=.22;
+    ctx.fillStyle='#070817';
+    ctx.beginPath();
+    ctx.ellipse(x,gy+2,w*.36,5,0,0,Math.PI*2);
+    ctx.fill();
+    ctx.globalAlpha=1;
+
+    ctx.drawImage(img,Math.round(x-w/2),Math.round(gy-h),w,h);
     ctx.restore();
   }
 
@@ -959,36 +1013,29 @@
   }
 
   function drawCollectibleIcon(c,x,y){
-    const emoji=c.emoji;
-    if(emoji==='🍔') return drawPixelBurger(x,y,1);
-    if(emoji==='🏀') return drawPixelBasketball(x,y,1);
-    if(emoji==='🎬'||emoji==='🎥'){
-      ctx.save();
-      const g=ctx.createRadialGradient(x,y,2,x,y,34);
-      g.addColorStop(0,'rgba(125,173,255,.42)');g.addColorStop(1,'rgba(125,173,255,0)');
-      ctx.fillStyle=g;ctx.fillRect(x-38,y-38,76,76);
-      px(x-14,y-9,28,18,'#D9E1EA');
-      px(x-12,y-7,24,14,'#273248');
-      px(x-12,y-11,24,5,'#EEF1F5');
-      for(let i=0;i<4;i++) px(x-10+i*6,y-10,3,3,i%2?'#273248':'#EEF1F5');
-      ctx.restore(); return;
-    }
-    if(emoji==='🍕'){
-      ctx.save();
-      const g=ctx.createRadialGradient(x,y,2,x,y,34);g.addColorStop(0,'rgba(255,188,83,.44)');g.addColorStop(1,'rgba(255,188,83,0)');
-      ctx.fillStyle=g;ctx.fillRect(x-38,y-38,76,76);
-      ctx.fillStyle='#F0B553';ctx.beginPath();ctx.moveTo(x,y+15);ctx.lineTo(x-14,y-12);ctx.lineTo(x+14,y-12);ctx.closePath();ctx.fill();
-      px(x-15,y-15,30,5,'#A95637');px(x-6,y-5,5,5,'#CF3E46');px(x+4,y+2,4,4,'#CF3E46');ctx.restore();return;
-    }
-    if(emoji==='🍟'){
-      ctx.save();const g=ctx.createRadialGradient(x,y,2,x,y,33);g.addColorStop(0,'rgba(255,206,80,.4)');g.addColorStop(1,'rgba(255,206,80,0)');ctx.fillStyle=g;ctx.fillRect(x-38,y-38,76,76);
-      for(let i=-3;i<=3;i+=2)px(x+i*4-2,y-15-(i%3)*2,4,20,'#F7C84A');px(x-13,y,26,18,'#D94357');px(x-7,y+4,14,4,'#F2E4D0');ctx.restore();return;
-    }
-    // fallback for remaining memories: bright framed emoji, not dim raw emoji
+    const key=collectibleAsset[c.emoji] || 'heart';
+    const img=gameAssets[key];
+    if(!img || !img.complete || !img.naturalWidth) return;
+
+    // Standardized visual size: this specifically prevents giant hamburgers / tiny açaí.
+    const sizes={
+      burger:48, pizza:45, fries:43, icecream:45, acai:46,
+      basketball:44, gamepad:46, clapper:46, coffee:43, heart:44
+    };
+    const size=sizes[key] || 45;
+
     ctx.save();
-    const g=ctx.createRadialGradient(x,y,2,x,y,34);g.addColorStop(0,'rgba(255,192,91,.42)');g.addColorStop(1,'rgba(255,192,91,0)');
-    ctx.fillStyle=g;ctx.fillRect(x-38,y-38,76,76);
-    ctx.font='26px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(emoji,x,y);
+    ctx.imageSmoothingEnabled=false;
+
+    // Shared glow makes every collectible readable against the night scene.
+    const glow=ctx.createRadialGradient(x,y,4,x,y,size*.68);
+    glow.addColorStop(0,'rgba(255,190,85,.32)');
+    glow.addColorStop(.62,'rgba(255,91,126,.12)');
+    glow.addColorStop(1,'rgba(255,91,126,0)');
+    ctx.fillStyle=glow;
+    ctx.fillRect(x-size,y-size,size*2,size*2);
+
+    ctx.drawImage(img,Math.round(x-size/2),Math.round(y-size/2),size,size);
     ctx.restore();
   }
 
@@ -1081,7 +1128,7 @@
     }
 
     for(const o of obstacles){
-      if(!o.hit) drawObstacle(o.worldX-scrollDist,gy);
+      if(!o.hit) drawObstacle(o,o.worldX-scrollDist,gy);
     }
 
     // collectibles: large pixel-art assets with a glow, as in the approved reference
@@ -1113,12 +1160,18 @@
         h.floatT+=.045;
         if(h.floatT>1)continue;
         ctx.globalAlpha=1-h.floatT;
-        drawPixelHeart(sx,h.y-h.floatT*42,1.05,true);
+        if(gameAssets.heart && gameAssets.heart.complete){
+          const hs=44;
+          ctx.drawImage(gameAssets.heart,sx-hs/2,h.y-h.floatT*42-hs/2,hs,hs);
+        }
         ctx.globalAlpha=1;
       }else{
         const bob=Math.sin((scrollDist+sx)*.02)*5;
         const pulse=1+Math.sin((scrollDist+sx)*.05)*.08;
-        drawPixelHeart(sx,h.y+bob,pulse,true);
+        if(gameAssets.heart && gameAssets.heart.complete){
+          const hs=44*pulse;
+          ctx.drawImage(gameAssets.heart,sx-hs/2,h.y+bob-hs/2,hs,hs);
+        }
       }
     }
 
