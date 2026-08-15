@@ -303,6 +303,9 @@
   let obstaclesEnabled=false;
   let jumpBuffer=0, coyoteTime=0;
   let respawnDist=0, respawnCheckpointIdx=0, respawnObstaclesEnabled=false;
+  let lastCollectibleX=-99999, lastObstacleX=-99999;
+  const COLLECTIBLE_GAP = 150;      // min distance between any two coins/hearts
+  const OBSTACLE_COLLECTIBLE_GAP = 260; // min distance keeping items away from obstacles
 
   function renderHearts(){
     let s='';
@@ -315,6 +318,7 @@
     coinCountEl.textContent='0'; renderHearts();
     nextCoinAt=350; nextObstacleAt=2900; nextHeartCheck=1200; nextCheckpointIdx=0;
     obstaclesEnabled=false; jumpBuffer=0; coyoteTime=0;
+    lastCollectibleX=-99999; lastObstacleX=-99999;
     respawnDist=0; respawnCheckpointIdx=0; respawnObstaclesEnabled=false;
     coins=[]; obstacles=[]; hearts=[];
     player={x:W*0.26,y:GROUND_Y()-16,vy:0,onGround:true,r:16,phase:0};
@@ -324,6 +328,7 @@
 
   function resumeFromCheckpoint(){
     scrollDist=respawnDist; lives=3; invuln=1.2; jumpBuffer=0; coyoteTime=0;
+    lastCollectibleX=-99999; lastObstacleX=-99999;
     nextCoinAt=scrollDist+300; nextObstacleAt=scrollDist+1400; nextHeartCheck=scrollDist+1000;
     nextCheckpointIdx=respawnCheckpointIdx;
     obstaclesEnabled=respawnObstaclesEnabled;
@@ -376,20 +381,35 @@
   });
 
   function spawnCoin(){
+    const x=scrollDist+W+40;
+    if(Math.abs(x-lastCollectibleX)<COLLECTIBLE_GAP || Math.abs(x-lastObstacleX)<OBSTACLE_COLLECTIBLE_GAP){
+      nextCoinAt=scrollDist+180; return; // too close, try again shortly
+    }
     const emoji=momentos[Math.floor(Math.random()*momentos.length)];
     const y=GROUND_Y()-60-Math.random()*90;
-    coins.push({worldX:scrollDist+W+40,y,emoji,collected:false,floatT:0});
-    nextCoinAt=scrollDist+W*0.55+Math.random()*160;
+    coins.push({worldX:x,y,emoji,collected:false,floatT:0});
+    lastCollectibleX=x;
+    nextCoinAt=scrollDist+W*0.6+Math.random()*170;
   }
   function spawnObstacle(){
-    obstacles.push({worldX:scrollDist+W+40, hit:false});
-    nextObstacleAt=scrollDist+W*0.9+Math.random()*260;
+    const x=scrollDist+W+40;
+    if(Math.abs(x-lastCollectibleX)<OBSTACLE_COLLECTIBLE_GAP){
+      nextObstacleAt=scrollDist+180; return; // too close to a collectible, try again shortly
+    }
+    obstacles.push({worldX:x, hit:false});
+    lastObstacleX=x;
+    nextObstacleAt=scrollDist+W*1.05+Math.random()*280;
   }
   function checkHeartSpawn(){
     if(scrollDist<nextHeartCheck) return;
     if(lives<3){
+      const x=scrollDist+W+40;
+      if(Math.abs(x-lastCollectibleX)<COLLECTIBLE_GAP || Math.abs(x-lastObstacleX)<OBSTACLE_COLLECTIBLE_GAP){
+        nextHeartCheck=scrollDist+180; return; // too close, try again shortly
+      }
       const y=GROUND_Y()-70-Math.random()*70;
-      hearts.push({worldX:scrollDist+W+40,y,collected:false,floatT:0});
+      hearts.push({worldX:x,y,collected:false,floatT:0});
+      lastCollectibleX=x;
       nextHeartCheck=scrollDist+2200+Math.random()*700;
     } else {
       nextHeartCheck=scrollDist+400; // full hearts: just check again soon, don't spawn
@@ -453,7 +473,7 @@
       const closestX=Math.max(sx-ow/2,Math.min(px,sx+ow/2));
       const topY=GROUND_Y()+player.r - oh;
       const closestY=Math.max(topY,Math.min(py,GROUND_Y()+player.r));
-      if(Math.hypot(px-closestX,py-closestY)<player.r-2 && invuln<=0){
+      if(Math.hypot(px-closestX,py-closestY)<player.r-5 && invuln<=0){
         o.hit=true; lives--; invuln=1.1; renderHearts();
         if(lives<=0){ gameOver(); return; }
       }
