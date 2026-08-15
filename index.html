@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>The Proposal</title>
-<!-- Approved baseline v7: rebuilt technical Nerd sprite sheet v2 with corrected animation frames -->
+<!-- Approved baseline v11: roomy transparent atlas + isolated frames + 8-frame fluid RUN cycle -->
 <style>
   :root{
     --bg:#0B1017;
@@ -380,14 +380,15 @@
     image-rendering:pixelated;
   }
   .start-character.real-sprite{
-    width:128px;height:128px;margin:-3px auto 8px;
-    background-image:url("assets/nerd-sprites-v2.png");
+    width:108px;
+    height:108px;
+    margin:-3px auto 11px;
+    background-image:url("assets/nerd-start.png");
     background-repeat:no-repeat;
-    background-position:0 0;
-    background-size:1280px 960px;
+    background-position:center;
+    background-size:contain;
     image-rendering:pixelated;
-    transform:scale(1.05);
-    transform-origin:center;
+    transform:none;
   }
 
   @media (min-width:700px){
@@ -449,15 +450,16 @@
 
   // Real sprite sheet based on the approved Nerd Apaixonado concept.
   const nerdSprite = new Image();
-  nerdSprite.src = 'assets/nerd-sprites-v2.png';
-  const SPRITE_CELL = 160;
+  nerdSprite.src = 'assets/nerd-sprites.png';
+  const SPRITE_CELL_W = 256;
+  const SPRITE_CELL_H = 224;
   const SPRITES = {
-    idle: [0,1,2,3,4,5],
-    run:  [8,9,10,11,12,13,14,15],
-    jump: [16,17,18,19,20,21],
-    fall: [24,25,26,27],
-    land: [32,33,34,35],
-    hit:  [40,41,42,43,44,45]
+    idle: [0, 1, 2, 3, 4, 5],
+    run:  [8, 9, 10, 11, 12, 13, 14, 15],
+    jump: [16, 17, 18, 19, 20],
+    fall: [24, 25, 26],
+    land: [32, 33, 34, 35],
+    hit:  [40, 41, 42, 43, 44, 45, 46]
   };
 
   // Approved real pixel-art asset pack.
@@ -1128,7 +1130,7 @@
     else if(player.landingTimer>0) stateName='land';
 
     const list=SPRITES[stateName] || SPRITES.idle;
-    let fps=stateName==='run'?9:stateName==='idle'?3:7;
+    let fps=stateName==='run'?12:stateName==='idle'?3:7;
     let idx=Math.floor((performance.now()/1000)*fps)%list.length;
 
     if(stateName==='jump'){
@@ -1138,12 +1140,12 @@
     }
 
     const frame=list[idx];
-    const sx=(frame%8)*SPRITE_CELL;
-    const sy=Math.floor(frame/8)*SPRITE_CELL;
+    const sx=(frame%8)*SPRITE_CELL_W;
+    const sy=Math.floor(frame/8)*SPRITE_CELL_H;
 
     // Larger and more character-like than the old procedural block figure.
-    const drawW=118;
-    const drawH=118;
+    const drawW=124;
+    const drawH=124;
     const dx=Math.round(px0-drawW/2);
     const dy=Math.round(py0-drawH+28);
 
@@ -1167,7 +1169,7 @@
 
     ctx.drawImage(
       nerdSprite,
-      sx,sy,SPRITE_CELL,SPRITE_CELL,
+      sx,sy,SPRITE_CELL_W,SPRITE_CELL_H,
       dx+hitShake,dy+hitLift,drawW,drawH
     );
 
