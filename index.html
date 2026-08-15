@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>The Proposal</title>
-<!-- Approved baseline v5: clean laptop + collectible lanes + visual pickup hitbox + collection feedback -->
+<!-- Approved baseline v6: fully opaque protagonist + non-transparent damage feedback -->
 <style>
   :root{
     --bg:#0B1017;
@@ -1149,21 +1149,46 @@
 
     ctx.save();
     ctx.imageSmoothingEnabled=false;
-    if(invuln>0 && Math.floor(invuln*14)%2===0) ctx.globalAlpha=.58;
+
+    // Never fade the protagonist. Damage feedback is positional/visual,
+    // so the sprite always remains fully opaque and readable.
+    const hitActive=invuln>0;
+    const hitShake=hitActive ? Math.sin(performance.now()*.075)*2.4 : 0;
+    const hitLift=hitActive ? Math.sin(performance.now()*.045)*1.2 : 0;
 
     // subtle shadow
-    ctx.globalAlpha*=.25;
+    ctx.save();
+    ctx.globalAlpha=.25;
     ctx.fillStyle='#050718';
     ctx.beginPath();
     ctx.ellipse(px0,py0+24,23,6,0,0,Math.PI*2);
     ctx.fill();
-    ctx.globalAlpha=invuln>0 && Math.floor(invuln*14)%2===0 ? .58 : 1;
+    ctx.restore();
 
     ctx.drawImage(
       nerdSprite,
       sx,sy,SPRITE_CELL,SPRITE_CELL,
-      dx,dy,drawW,drawH
+      dx+hitShake,dy+hitLift,drawW,drawH
     );
+
+    // Damage stars replace the old transparency blink.
+    if(hitActive){
+      const t=performance.now()/180;
+      ctx.save();
+      ctx.globalAlpha=.95;
+      ctx.fillStyle='#FFD75E';
+      for(let i=0;i<3;i++){
+        const a=t+i*Math.PI*2/3;
+        const starX=px0+Math.cos(a)*26;
+        const starY=py0-62+Math.sin(a)*7;
+        const s=i===0?4:3;
+        ctx.fillRect(Math.round(starX-s/2),Math.round(starY-s/2),s,s);
+        ctx.fillRect(Math.round(starX-1),Math.round(starY-s),2,s*2);
+        ctx.fillRect(Math.round(starX-s),Math.round(starY-1),s*2,2);
+      }
+      ctx.restore();
+    }
+
     ctx.restore();
   }
 
