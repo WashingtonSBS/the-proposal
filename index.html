@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>The Proposal</title>
-<!-- Approved baseline v4: Nerd sprites + individually rebuilt clean collectible/obstacle assets -->
+<!-- Approved baseline v5: clean laptop + collectible lanes + visual pickup hitbox + collection feedback -->
 <style>
   :root{
     --bg:#0B1017;
@@ -533,6 +533,23 @@
   const SPEED=135;
   const GRAVITY=2000;
   const JUMP_V=-680;
+  const COLLECTIBLE_LANES=[
+    {min:112,max:122,weight:.45},
+    {min:132,max:145,weight:.40},
+    {min:155,max:168,weight:.15}
+  ];
+  const PICKUP_HALF_W=34;
+  const PICKUP_HALF_H=40;
+  const PICKUP_CENTER_Y_OFFSET=-28;
+  function randomCollectibleHeight(){
+    const r=Math.random(); let acc=0;
+    for(const lane of COLLECTIBLE_LANES){
+      acc+=lane.weight;
+      if(r<=acc) return lane.min+Math.random()*(lane.max-lane.min);
+    }
+    const lane=COLLECTIBLE_LANES[0];
+    return lane.min+Math.random()*(lane.max-lane.min);
+  }
 
   const milestones=[
     {dist:700,type:'date',date:'Maio de 2015',text:'A gente se conheceu.'},
@@ -555,7 +572,7 @@
   let state='idle';
   let scrollDist=0,lastTime=0;
   let player={x:0,y:0,vy:0,onGround:true,r:16,phase:0,landingTimer:0};
-  let coins=[],obstacles=[],hearts=[];
+  let coins=[],obstacles=[],hearts=[],collectFx=[];
   let nextCoinAt=0,nextObstacleAt=0,nextHeartCheck=0,nextCheckpointIdx=0;
   let coinsCollected=0,lives=3,invuln=0;
   let clouds=[],bushes=[],city=[];
@@ -579,7 +596,7 @@
     obstaclesEnabled=false; jumpBuffer=0; coyoteTime=0;
     lastCollectibleX=-99999; lastObstacleX=-99999;
     respawnDist=0; respawnCheckpointIdx=0; respawnObstaclesEnabled=false;
-    coins=[]; obstacles=[]; hearts=[];
+    coins=[]; obstacles=[]; hearts=[]; collectFx=[];
     player={x:W*.26,y:GROUND_Y()-16,vy:0,onGround:true,r:16,phase:0,landingTimer:0};
     clouds=Array.from({length:6},()=>({x:Math.random()*1100,y:45+Math.random()*115,s:.6+Math.random()*.8}));
     bushes=Array.from({length:12},(_,i)=>({x:i*230+Math.random()*80,s:.7+Math.random()*.6}));
@@ -592,7 +609,7 @@
     nextCoinAt=scrollDist+300; nextObstacleAt=scrollDist+1400; nextHeartCheck=scrollDist+1000;
     nextCheckpointIdx=respawnCheckpointIdx;
     obstaclesEnabled=respawnObstaclesEnabled;
-    coins=[]; obstacles=[]; hearts=[];
+    coins=[]; obstacles=[]; hearts=[]; collectFx=[];
     renderHearts();
     player={x:W*.26,y:GROUND_Y()-16,vy:0,onGround:true,r:16,phase:0,landingTimer:0};
   }
@@ -642,6 +659,16 @@
     cardWrap.classList.add('hidden');
     state='playing'; lastTime=performance.now();
   });
+
+  function spawnCollectFx(x,y,label='+1'){
+    const parts=[];
+    for(let i=0;i<9;i++){
+      const a=(Math.PI*2*i/9)+(Math.random()-.5)*.3;
+      const speed=28+Math.random()*42;
+      parts.push({x,y,vx:Math.cos(a)*speed,vy:Math.sin(a)*speed-18,life:.6,maxLife:.6,size:2+Math.random()*2});
+    }
+    collectFx.push({x,y,label,t:0,parts});
+  }
 
   function spawnCoin(){
     const x=scrollDist+W+40;
@@ -727,19 +754,25 @@
 
     for(const c of coins){
       if(c.collected)continue;
-      const sx=c.worldX-scrollDist,dx=sx-player.x,dy=c.y-player.y;
-      if(Math.hypot(dx,dy)<player.r+16){
+      const sx=c.worldX-scrollDist;
+      const pickupCy=player.y+PICKUP_CENTER_Y_OFFSET;
+      const dx=Math.abs(sx-player.x),dy=Math.abs(c.y-pickupCy);
+      if(dx<PICKUP_HALF_W+16 && dy<PICKUP_HALF_H+16){
         c.collected=true;c.floatT=.0001;coinsCollected++;coinCountEl.textContent=coinsCollected;
+        spawnCollectFx(sx,c.y,'+1');
       }
     }
     coins=coins.filter(c=>(c.worldX-scrollDist)>-80);
 
     for(const h of hearts){
       if(h.collected)continue;
-      const sx=h.worldX-scrollDist,dx=sx-player.x,dy=h.y-player.y;
-      if(Math.hypot(dx,dy)<player.r+16){
+      const sx=h.worldX-scrollDist;
+      const pickupCy=player.y+PICKUP_CENTER_Y_OFFSET;
+      const dx=Math.abs(sx-player.x),dy=Math.abs(h.y-pickupCy);
+      if(dx<PICKUP_HALF_W+16 && dy<PICKUP_HALF_H+16){
         h.collected=true;h.floatT=.0001;
         if(lives<3){lives++;renderHearts()}
+        spawnCollectFx(sx,h.y,'+♥');
       }
     }
     hearts=hearts.filter(h=>(h.worldX-scrollDist)>-80);
@@ -758,6 +791,11 @@
       }
     }
     obstacles=obstacles.filter(o=>(o.worldX-scrollDist)>-60);
+    for(const fx of collectFx){
+      fx.t+=dt;
+      for(const p of fx.parts){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=90*dt;p.life-=dt;}
+    }
+    collectFx=collectFx.filter(fx=>fx.t<.85);
 
     if(nextCheckpointIdx<milestones.length&&scrollDist>=milestones[nextCheckpointIdx].dist){
       const m=milestones[nextCheckpointIdx];
@@ -1221,6 +1259,22 @@
           if(hh>maxH){hh=maxH;hw=hh*ratio;}
           ctx.drawImage(hi,sx-hw/2,h.y+bob-hh/2,hw,hh);
         }
+      }
+    }
+
+    // Pickup feedback
+    for(const fx of collectFx){
+      for(const p of fx.parts){
+        if(p.life<=0) continue;
+        ctx.save();ctx.globalAlpha=Math.max(0,p.life/p.maxLife);
+        ctx.fillStyle=(Math.floor(p.x+p.y)%2===0)?'#FFD75E':'#FF5A7A';
+        ctx.fillRect(Math.round(p.x),Math.round(p.y),Math.round(p.size),Math.round(p.size));ctx.restore();
+      }
+      const a=Math.max(0,1-fx.t/.72);
+      if(a>0){
+        ctx.save();ctx.globalAlpha=a;ctx.textAlign='center';ctx.textBaseline='middle';
+        ctx.font='900 17px "Courier New", monospace';ctx.shadowColor='rgba(255,86,120,.8)';
+        ctx.shadowBlur=8;ctx.fillStyle='#FFF1C7';ctx.fillText(fx.label,fx.x,fx.y-22-fx.t*30);ctx.restore();
       }
     }
 
