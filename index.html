@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>The Proposal</title>
-<!-- Approved baseline: Nerd real sprites + real collectible/obstacle pixel-art assets -->
+<!-- Approved baseline v4: Nerd sprites + individually rebuilt clean collectible/obstacle assets -->
 <style>
   :root{
     --bg:#0B1017;
@@ -938,27 +938,43 @@
     const img=gameAssets[type];
     if(!img || !img.complete || !img.naturalWidth) return;
 
-    const sizes={
-      trash:[54,54],
-      barrier:[70,54],
-      cone:[52,58],
-      laptop:[62,52],
-      crate:[58,58]
+    // Max boxes preserve each obstacle's authored proportions.
+    const boxes={
+      trash:[48,50],
+      barrier:[67,48],
+      cone:[43,52],
+      laptop:[58,45],
+      crate:[52,52]
     };
-    const [w,h]=sizes[type] || [56,56];
+
+    const [maxW,maxH]=boxes[type] || [52,52];
+    const ratio=img.naturalWidth/img.naturalHeight;
+
+    let w=maxW, h=w/ratio;
+    if(h>maxH){
+      h=maxH;
+      w=h*ratio;
+    }
 
     ctx.save();
     ctx.imageSmoothingEnabled=false;
 
-    // subtle contact shadow only; artwork itself already contains its authored shading.
-    ctx.globalAlpha=.22;
+    // Ground contact shadow, aligned to the actual bottom of the sprite.
+    ctx.globalAlpha=.20;
     ctx.fillStyle='#070817';
     ctx.beginPath();
-    ctx.ellipse(x,gy+2,w*.36,5,0,0,Math.PI*2);
+    ctx.ellipse(x,gy+2,Math.max(14,w*.34),4.5,0,0,Math.PI*2);
     ctx.fill();
     ctx.globalAlpha=1;
 
-    ctx.drawImage(img,Math.round(x-w/2),Math.round(gy-h),w,h);
+    ctx.drawImage(
+      img,
+      Math.round(x-w/2),
+      Math.round(gy-h),
+      Math.round(w),
+      Math.round(h)
+    );
+
     ctx.restore();
   }
 
@@ -1017,25 +1033,50 @@
     const img=gameAssets[key];
     if(!img || !img.complete || !img.naturalWidth) return;
 
-    // Standardized visual size: this specifically prevents giant hamburgers / tiny açaí.
-    const sizes={
-      burger:48, pizza:45, fries:43, icecream:45, acai:46,
-      basketball:44, gamepad:46, clapper:46, coffee:43, heart:44
+    // Max visual boxes by item. Aspect ratio is always preserved.
+    // This fixes stretched/cropped assets and keeps the burger from dominating the scene.
+    const boxes={
+      burger:[44,38],
+      pizza:[42,44],
+      fries:[39,44],
+      icecream:[36,46],
+      acai:[44,40],
+      basketball:[42,42],
+      gamepad:[46,37],
+      clapper:[46,39],
+      coffee:[35,44],
+      heart:[42,40]
     };
-    const size=sizes[key] || 45;
+
+    const [maxW,maxH]=boxes[key] || [44,44];
+    const ratio=img.naturalWidth/img.naturalHeight;
+
+    let w=maxW, h=w/ratio;
+    if(h>maxH){
+      h=maxH;
+      w=h*ratio;
+    }
 
     ctx.save();
     ctx.imageSmoothingEnabled=false;
 
-    // Shared glow makes every collectible readable against the night scene.
-    const glow=ctx.createRadialGradient(x,y,4,x,y,size*.68);
-    glow.addColorStop(0,'rgba(255,190,85,.32)');
-    glow.addColorStop(.62,'rgba(255,91,126,.12)');
+    // Shared glow only. The artwork itself is never resized non-proportionally.
+    const glowRadius=Math.max(w,h)*.82;
+    const glow=ctx.createRadialGradient(x,y,3,x,y,glowRadius);
+    glow.addColorStop(0,'rgba(255,194,92,.34)');
+    glow.addColorStop(.58,'rgba(255,91,126,.13)');
     glow.addColorStop(1,'rgba(255,91,126,0)');
     ctx.fillStyle=glow;
-    ctx.fillRect(x-size,y-size,size*2,size*2);
+    ctx.fillRect(x-glowRadius,y-glowRadius,glowRadius*2,glowRadius*2);
 
-    ctx.drawImage(img,Math.round(x-size/2),Math.round(y-size/2),size,size);
+    ctx.drawImage(
+      img,
+      Math.round(x-w/2),
+      Math.round(y-h/2),
+      Math.round(w),
+      Math.round(h)
+    );
+
     ctx.restore();
   }
 
@@ -1161,16 +1202,24 @@
         if(h.floatT>1)continue;
         ctx.globalAlpha=1-h.floatT;
         if(gameAssets.heart && gameAssets.heart.complete){
-          const hs=44;
-          ctx.drawImage(gameAssets.heart,sx-hs/2,h.y-h.floatT*42-hs/2,hs,hs);
+          const hi=gameAssets.heart;
+          const maxW=42,maxH=40;
+          const ratio=hi.naturalWidth/hi.naturalHeight;
+          let hw=maxW,hh=hw/ratio;
+          if(hh>maxH){hh=maxH;hw=hh*ratio;}
+          ctx.drawImage(hi,sx-hw/2,h.y-h.floatT*42-hh/2,hw,hh);
         }
         ctx.globalAlpha=1;
       }else{
         const bob=Math.sin((scrollDist+sx)*.02)*5;
         const pulse=1+Math.sin((scrollDist+sx)*.05)*.08;
         if(gameAssets.heart && gameAssets.heart.complete){
-          const hs=44*pulse;
-          ctx.drawImage(gameAssets.heart,sx-hs/2,h.y+bob-hs/2,hs,hs);
+          const hi=gameAssets.heart;
+          const maxW=42*pulse,maxH=40*pulse;
+          const ratio=hi.naturalWidth/hi.naturalHeight;
+          let hw=maxW,hh=hw/ratio;
+          if(hh>maxH){hh=maxH;hw=hh*ratio;}
+          ctx.drawImage(hi,sx-hw/2,h.y+bob-hh/2,hw,hh);
         }
       }
     }
