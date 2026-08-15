@@ -285,7 +285,7 @@
     {dist: 8000, type:'reflection', text:'Mas em todas elas desejo estar ao seu lado!! 💙'},
   ];
   const TOTAL_DIST = 8900;
-  const foods = ['🍕','🍦','🍔','🍿'];
+  const momentos = ['🍨', '🫐','🍔', '🍟','🍕','🎬','🍿', '🎥', '🏀'];
 
   let state = 'idle';
   let scrollDist=0, lastTime=0;
@@ -345,7 +345,7 @@
   });
 
   function spawnCoin(){
-    const emoji=foods[Math.floor(Math.random()*foods.length)];
+    const emoji=momentos[Math.floor(Math.random()*momentos.length)];
     const y=GROUND_Y()-60-Math.random()*90;
     coins.push({worldX:scrollDist+W+40,y,emoji,collected:false,floatT:0});
     nextCoinAt=scrollDist+W*0.55+Math.random()*160;
