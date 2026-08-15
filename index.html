@@ -229,7 +229,8 @@
     <div class="cardbox">
       <div class="txt">Ihh, essa foi por pouco! 💔</div>
       <div class="sub2">Mas o nosso amor sempre tem revanche.</div>
-      <button class="btn" id="retryBtn">Jogar de novo</button>
+      <button class="btn" id="continueBtn" style="margin-bottom:10px;">Continuar de onde parei</button>
+      <button class="btn" id="retryBtn" style="background:transparent; color:var(--cream); box-shadow:none; border:2px solid var(--blue-deep);">Jogar do início</button>
     </div>
   </div>
 
@@ -255,6 +256,7 @@
   const cpBtn = document.getElementById('cpBtn');
   const gameoverScreen = document.getElementById('gameover');
   const retryBtn = document.getElementById('retryBtn');
+  const continueBtn = document.getElementById('continueBtn');
   const finaleUnderline = document.getElementById('finaleUnderline');
 
   let W=0,H=0,DPR=1;
@@ -293,11 +295,12 @@
   let state = 'idle';
   let scrollDist=0, lastTime=0;
   let player = {x:0,y:0,vy:0,onGround:true,r:16,phase:0};
-  let coins=[], obstacles=[];
-  let nextCoinAt=0, nextObstacleAt=0, nextCheckpointIdx=0;
+  let coins=[], obstacles=[], hearts=[];
+  let nextCoinAt=0, nextObstacleAt=0, nextHeartCheck=0, nextCheckpointIdx=0;
   let coinsCollected=0, lives=3, invuln=0;
   let clouds=[], bushes=[];
   let obstaclesEnabled=false;
+  let respawnDist=0, respawnCheckpointIdx=0, respawnObstaclesEnabled=false;
 
   function renderHearts(){
     let s='';
@@ -308,12 +311,23 @@
   function initWorld(){
     scrollDist=0; coinsCollected=0; lives=3; invuln=0;
     coinCountEl.textContent='0'; renderHearts();
-    nextCoinAt=350; nextObstacleAt=2900; nextCheckpointIdx=0;
+    nextCoinAt=350; nextObstacleAt=2900; nextHeartCheck=1200; nextCheckpointIdx=0;
     obstaclesEnabled=false;
-    coins=[]; obstacles=[];
+    respawnDist=0; respawnCheckpointIdx=0; respawnObstaclesEnabled=false;
+    coins=[]; obstacles=[]; hearts=[];
     player={x:W*0.26,y:GROUND_Y()-16,vy:0,onGround:true,r:16,phase:0};
     clouds=Array.from({length:5},()=>({x:Math.random()*1000,y:40+Math.random()*80,s:0.6+Math.random()*0.8}));
     bushes=Array.from({length:10},(_,i)=>({x:i*260+Math.random()*80,s:0.7+Math.random()*0.6}));
+  }
+
+  function resumeFromCheckpoint(){
+    scrollDist=respawnDist; lives=3; invuln=1.2;
+    nextCoinAt=scrollDist+300; nextObstacleAt=scrollDist+1400; nextHeartCheck=scrollDist+1000;
+    nextCheckpointIdx=respawnCheckpointIdx;
+    obstaclesEnabled=respawnObstaclesEnabled;
+    coins=[]; obstacles=[]; hearts=[];
+    renderHearts();
+    player={x:W*0.26,y:GROUND_Y()-16,vy:0,onGround:true,r:16,phase:0};
   }
 
   function jump(){
@@ -342,6 +356,14 @@
     initWorld(); state='playing'; lastTime=performance.now();
   });
 
+  continueBtn.addEventListener('click',()=>{
+    gameoverScreen.classList.add('hidden');
+    hud.classList.remove('hidden');
+    heartsEl.classList.remove('hidden');
+    jumpBtn.classList.remove('hidden');
+    resumeFromCheckpoint(); state='playing'; lastTime=performance.now();
+  });
+
   cpBtn.addEventListener('click',()=>{
     cardWrap.classList.add('hidden');
     state='playing'; lastTime=performance.now();
@@ -356,6 +378,16 @@
   function spawnObstacle(){
     obstacles.push({worldX:scrollDist+W+40, hit:false});
     nextObstacleAt=scrollDist+W*0.9+Math.random()*260;
+  }
+  function checkHeartSpawn(){
+    if(scrollDist<nextHeartCheck) return;
+    if(lives<3){
+      const y=GROUND_Y()-70-Math.random()*70;
+      hearts.push({worldX:scrollDist+W+40,y,collected:false,floatT:0});
+      nextHeartCheck=scrollDist+2200+Math.random()*700;
+    } else {
+      nextHeartCheck=scrollDist+400; // full hearts: just check again soon, don't spawn
+    }
   }
 
   function gameOver(){
@@ -377,6 +409,7 @@
 
     if(obstaclesEnabled && scrollDist>=nextObstacleAt) spawnObstacle();
     if(scrollDist>=nextCoinAt) spawnCoin();
+    checkHeartSpawn();
 
     for(const c of coins){
       if(c.collected) continue;
@@ -384,6 +417,16 @@
       if(Math.hypot(dx,dy)<player.r+16){ c.collected=true; c.floatT=0.0001; coinsCollected++; coinCountEl.textContent=coinsCollected; }
     }
     coins=coins.filter(c=>(c.worldX-scrollDist)>-80);
+
+    for(const h of hearts){
+      if(h.collected) continue;
+      const sx=h.worldX-scrollDist, dx=sx-player.x, dy=h.y-player.y;
+      if(Math.hypot(dx,dy)<player.r+16){
+        h.collected=true; h.floatT=0.0001;
+        if(lives<3){ lives++; renderHearts(); }
+      }
+    }
+    hearts=hearts.filter(h=>(h.worldX-scrollDist)>-80);
 
     for(const o of obstacles){
       if(o.hit) continue;
@@ -403,6 +446,9 @@
     if(nextCheckpointIdx<milestones.length && scrollDist>=milestones[nextCheckpointIdx].dist){
       const m=milestones[nextCheckpointIdx]; nextCheckpointIdx++;
       if(m.type==='reflection' && m.text.indexOf('desafios')>=0) obstaclesEnabled=true;
+      respawnDist=milestones[nextCheckpointIdx-1].dist;
+      respawnCheckpointIdx=nextCheckpointIdx;
+      respawnObstaclesEnabled=obstaclesEnabled;
       if(m.type==='date'){
         cardBox.classList.remove('reflection');
         cpDate.style.display='block'; cpDate.textContent=m.date; cpText.textContent=m.text;
@@ -461,6 +507,17 @@
       const sx=c.worldX-scrollDist;
       if(c.collected){ c.floatT+=0.045; if(c.floatT>1) continue; ctx.globalAlpha=1-c.floatT; ctx.fillText(c.emoji,sx,c.y-c.floatT*40); ctx.globalAlpha=1; }
       else { const bob=Math.sin((scrollDist+sx)*0.02)*4; ctx.fillText(c.emoji,sx,c.y+bob); }
+    }
+    for(const h of hearts){
+      const sx=h.worldX-scrollDist;
+      if(h.collected){ h.floatT+=0.045; if(h.floatT>1) continue; ctx.globalAlpha=1-h.floatT; ctx.fillText('❤️',sx,h.y-h.floatT*40); ctx.globalAlpha=1; }
+      else {
+        const pulse=1+Math.sin((scrollDist+sx)*0.05)*0.12;
+        const bob=Math.sin((scrollDist+sx)*0.02)*5;
+        ctx.save(); ctx.translate(sx,h.y+bob); ctx.scale(pulse,pulse);
+        ctx.fillText('❤️',0,0);
+        ctx.restore();
+      }
     }
 
     const blink = invuln>0 && Math.floor(invuln*12)%2===0;
