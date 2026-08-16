@@ -1392,12 +1392,18 @@
 
   let finaleStart=0;
 
-  function drawImageCover(img){
-    const scale=Math.max(W/img.naturalWidth,H/img.naturalHeight);
-    const sw=W/scale,sh=H/scale;
-    const sx=(img.naturalWidth-sw)/2;
-    const sy=(img.naturalHeight-sh)/2;
-    ctx.drawImage(img,sx,sy,sw,sh,0,0,W,H);
+  function drawFinaleScene(img){
+    const imageRatio=img.naturalWidth/img.naturalHeight;
+    const viewportRatio=W/H;
+    const useContain=viewportRatio>imageRatio*1.06;
+    const scale=useContain
+      ? Math.min(W/img.naturalWidth,H/img.naturalHeight)
+      : Math.max(W/img.naturalWidth,H/img.naturalHeight);
+    const drawW=img.naturalWidth*scale;
+    const drawH=img.naturalHeight*scale;
+    const drawX=(W-drawW)/2;
+    const drawY=(H-drawH)/2;
+    ctx.drawImage(img,drawX,drawY,drawW,drawH);
   }
 
   function startFinale(){
@@ -1416,7 +1422,7 @@
     if(proposalScene.complete&&proposalScene.naturalWidth){
       ctx.save();
       ctx.globalAlpha=sceneFade;
-      drawImageCover(proposalScene);
+      drawFinaleScene(proposalScene);
       ctx.restore();
     }
 
