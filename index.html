@@ -234,23 +234,6 @@
     margin:-8px 0 20px;
   }
 
-  #finaleUnderline{
-    position:absolute;
-    left:0;
-    right:0;
-    bottom:10%;
-    z-index:6;
-    text-align:center;
-    opacity:0;
-    transition:opacity 1.2s ease;
-    font-family:-apple-system,"Segoe UI",sans-serif;
-    font-size:16px;
-    color:#F3D8DE;
-    font-weight:700;
-    padding:0 20px;
-  }
-  #finaleUnderline.show{opacity:1}
-
   /* Start screen */
   #startScreen{
     background:
@@ -439,7 +422,6 @@
     </div>
   </div>
 
-  <div id="finaleUnderline">ei... agora olha pra mim? 👀💙</div>
 </div>
 
 <script>
@@ -451,6 +433,8 @@
   // Real sprite sheet based on the approved Nerd Apaixonado concept.
   const nerdSprite = new Image();
   nerdSprite.src = 'assets/nerd-sprites.png';
+  const proposalScene = new Image();
+  proposalScene.src = 'assets/proposal-scene.png';
   const SPRITE_CELL_W = 288;
   const SPRITE_CELL_H = 256;
   const SPRITES = {
@@ -525,7 +509,6 @@
   const gameoverScreen = document.getElementById('gameover');
   const retryBtn = document.getElementById('retryBtn');
   const continueBtn = document.getElementById('continueBtn');
-  const finaleUnderline = document.getElementById('finaleUnderline');
 
   let W=0,H=0,DPR=1;
   function resize(){
@@ -1399,116 +1382,80 @@
     if(allAbove&&t>2)startFinale();
   }
 
-  const lines=[
-    'Um cineminha, uma pizza,',
-    'um sorvete, um açaí...',
-    'e você, para sempre',
-    'ao meu lado.',
-    'Aceita casar comigo? 🙏💙'
+  const finalePages=[
+    {duration:4.8,lines:['Um cineminha, uma pizza,','um sorvete, um açaí...']},
+    {duration:5.6,lines:['Foram tantos momentos','que, sem perceber,','se tornaram a nossa história.']},
+    {duration:6.4,lines:['Construímos uma família,','uma vida','e um amor que eu quero escolher','todos os dias.']},
+    {duration:5.4,lines:['Eu quero viver','todos os próximos capítulos','ao seu lado.']},
+    {duration:Infinity,final:true,lines:['E agora...','olha pra mim. 💙']}
   ];
 
-  let particles=[],finaleStart=0,finaleStars=[],crispStart=null;
-  let textFontSize=20,textStartY=0,textLineH=0;
+  let finaleStart=0;
 
-  function buildTargets(){
-    const SCALE=3;
-    const off=document.createElement('canvas');
-    off.width=W*SCALE;off.height=H*SCALE;
-    const octx=off.getContext('2d');
-    octx.scale(SCALE,SCALE);
-    octx.fillStyle='#fff';
-    octx.textAlign='center';
-    octx.textBaseline='middle';
-
-    textFontSize=Math.max(15,Math.min(21,W/18));
-    octx.font=`800 ${textFontSize}px -apple-system, "Segoe UI", sans-serif`;
-    textStartY=H*.28;
-    textLineH=textFontSize*1.55;
-    lines.forEach((ln,i)=>octx.fillText(ln,W/2,textStartY+i*textLineH));
-
-    const img=octx.getImageData(0,0,W*SCALE,H*SCALE).data;
-    const pts=[];
-    const step=2;
-    const fullW=W*SCALE;
-
-    for(let y=0;y<H*SCALE;y+=step){
-      for(let x=0;x<W*SCALE;x+=step){
-        if(img[(y*fullW+x)*4+3]>140)pts.push({x:x/SCALE,y:y/SCALE});
-      }
-    }
-    return pts;
+  function drawImageCover(img){
+    const scale=Math.max(W/img.naturalWidth,H/img.naturalHeight);
+    const sw=W/scale,sh=H/scale;
+    const sx=(img.naturalWidth-sw)/2;
+    const sy=(img.naturalHeight-sh)/2;
+    ctx.drawImage(img,sx,sy,sw,sh,0,0,W,H);
   }
 
   function startFinale(){
     state='finaleTransition';
     finaleStart=performance.now();
-    crispStart=null;
-    const targets=buildTargets();
-
-    finaleStars=Array.from({length:45},()=>({
-      x:Math.random()*W,y:Math.random()*H*.62,r:Math.random()*1.4+.4,tw:Math.random()*Math.PI*2
-    }));
-
-    particles=targets.map(t=>({
-      x:Math.random()*W,
-      y:H+Math.random()*120,
-      tx:t.x,ty:t.y,
-      delay:Math.random()*.55,
-      dur:.8+Math.random()*.5
-    }));
   }
 
   function drawFinale(now){
     const t=(now-finaleStart)/1000;
-    const fade=Math.min(1,t/1.1);
+    const sceneFade=Math.min(1,t/1.35);
 
     ctx.clearRect(0,0,W,H);
     ctx.fillStyle='#080D14';
     ctx.fillRect(0,0,W,H);
 
-    for(const s of finaleStars){
-      const tw=.5+.5*Math.sin(t*2+s.tw);
-      ctx.fillStyle=`rgba(255,255,255,${.5*tw})`;
-      ctx.beginPath();
-      ctx.arc(s.x,s.y,s.r,0,Math.PI*2);
-      ctx.fill();
-    }
-
-    const allDone=particles.every(p=>(t-p.delay)>=p.dur);
-    if(allDone&&crispStart===null)crispStart=t;
-    const crispAlpha=crispStart===null?0:Math.min(1,(t-crispStart)/.7);
-
-    ctx.fillStyle='#EB4D67';
-    for(const p of particles){
-      let pt=(t-p.delay)/p.dur;
-      pt=Math.max(0,Math.min(1,pt));
-      const ease=1-Math.pow(1-pt,3);
-      const cx=p.x+(p.tx-p.x)*ease;
-      const cy=p.y+(p.ty-p.y)*ease;
-      ctx.globalAlpha=(.4+.6*ease)*(1-crispAlpha*.75);
-      ctx.fillRect(Math.round(cx),Math.round(cy),3,3);
-    }
-    ctx.globalAlpha=1;
-
-    if(crispAlpha>0){
+    if(proposalScene.complete&&proposalScene.naturalWidth){
       ctx.save();
-      ctx.textAlign='center';
-      ctx.textBaseline='middle';
-      ctx.font=`800 ${textFontSize}px -apple-system, "Segoe UI", sans-serif`;
-      ctx.globalAlpha=crispAlpha;
-      ctx.shadowColor='rgba(235,77,103,.8)';
-      ctx.shadowBlur=14;
-      ctx.fillStyle='#FFD7DE';
-      lines.forEach((ln,i)=>ctx.fillText(ln,W/2,textStartY+i*textLineH));
+      ctx.globalAlpha=sceneFade;
+      drawImageCover(proposalScene);
       ctx.restore();
-      ctx.globalAlpha=1;
     }
 
-    if(state==='finaleTransition'&&fade>=1)state='finaleForm';
-    if(state==='finaleForm'&&crispAlpha>=1&&t-crispStart>.5){
-      state='finaleDone';
-      finaleUnderline.classList.add('show');
+    const shade=ctx.createLinearGradient(0,0,0,H*.48);
+    shade.addColorStop(0,'rgba(3,7,24,.88)');
+    shade.addColorStop(.7,'rgba(5,10,32,.44)');
+    shade.addColorStop(1,'rgba(5,10,32,0)');
+    ctx.fillStyle=shade;
+    ctx.fillRect(0,0,W,H*.5);
+
+    let page=finalePages[finalePages.length-1];
+    let pageTime=t;
+    for(const candidate of finalePages){
+      page=candidate;
+      if(pageTime<candidate.duration)break;
+      pageTime-=candidate.duration;
     }
+
+    const fadeIn=Math.min(1,pageTime/.85);
+    const fadeOut=page.final?1:Math.min(1,(page.duration-pageTime)/.85);
+    const textAlpha=Math.max(0,Math.min(fadeIn,fadeOut))*sceneFade;
+    const fontSize=Math.max(16,Math.min(page.final?25:21,W/(page.final?16:19)));
+    const lineH=fontSize*1.45;
+    const blockH=(page.lines.length-1)*lineH;
+    const startY=H*.15-blockH/2;
+
+    ctx.save();
+    ctx.textAlign='center';
+    ctx.textBaseline='middle';
+    ctx.font=`800 ${fontSize}px -apple-system, "Segoe UI", sans-serif`;
+    ctx.globalAlpha=textAlpha;
+    ctx.shadowColor=page.final?'rgba(235,77,103,.95)':'rgba(0,0,0,.9)';
+    ctx.shadowBlur=page.final?16:10;
+    ctx.fillStyle=page.final?'#FFD7DE':'#F7F2EE';
+    page.lines.forEach((line,i)=>ctx.fillText(line,W/2,startY+i*lineH));
+    ctx.restore();
+
+    if(state==='finaleTransition'&&sceneFade>=1)state='finaleForm';
+    if(page.final&&pageTime>1.2)state='finaleDone';
   }
 
   function loop(now){
