@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>The Proposal</title>
-<!-- Approved baseline v12: fluid 8-frame run cadence with grounded foot-contact offsets -->
+<!-- V14: clean 288x256 atlas cells with transparent padding and preserved baseline -->
 <style>
   :root{
     --bg:#0B1017;
@@ -451,8 +451,8 @@
   // Real sprite sheet based on the approved Nerd Apaixonado concept.
   const nerdSprite = new Image();
   nerdSprite.src = 'assets/nerd-sprites.png';
-  const SPRITE_CELL_W = 256;
-  const SPRITE_CELL_H = 224;
+  const SPRITE_CELL_W = 288;
+  const SPRITE_CELL_H = 256;
   const SPRITES = {
     idle: [0, 1, 2, 3, 4, 5],
     run:  [8, 9, 10, 11, 12, 13, 14, 15],
