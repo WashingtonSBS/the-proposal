@@ -158,7 +158,10 @@
     text-transform:uppercase;
     box-shadow:5px 5px 0 #6F2331;
     touch-action:manipulation;
+    -webkit-touch-callout:none;
+    -webkit-user-select:none;
     user-select:none;
+    -webkit-user-drag:none;
   }
   #jumpBtn::before{content:"▲ "}
   #jumpBtn:active{transform:translate(-50%,5px);box-shadow:none}
@@ -617,7 +620,11 @@
   }
 
   jumpBtn.addEventListener('touchstart',e=>{e.preventDefault();jump()},{passive:false});
+  jumpBtn.addEventListener('touchend',e=>e.preventDefault(),{passive:false});
   jumpBtn.addEventListener('mousedown',jump);
+  jumpBtn.addEventListener('contextmenu',e=>e.preventDefault());
+  jumpBtn.addEventListener('selectstart',e=>e.preventDefault());
+  jumpBtn.addEventListener('dragstart',e=>e.preventDefault());
   window.addEventListener('keydown',e=>{
     if(e.code==='Space'||e.code==='ArrowUp'){e.preventDefault();jump()}
   });
@@ -780,6 +787,10 @@
       const closestY=Math.max(topY,Math.min(py,GROUND_Y()+player.r));
       if(Math.hypot(px-closestX,py-closestY)<player.r-5&&invuln<=0){
         o.hit=true;lives--;invuln=1.1;renderHearts();
+        if(lives===1&&!hearts.some(h=>!h.collected)){
+          // Narrative assist: offer recovery sooner when only one life remains.
+          nextHeartCheck=Math.min(nextHeartCheck,scrollDist+Math.max(700,W*1.6));
+        }
         if(lives<=0){gameOver();return}
       }
     }
